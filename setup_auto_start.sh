@@ -124,11 +124,7 @@ read -p "LaunchAgents plist fajlovi kopirani. Pritisni Enter..."
 [ "$INSTALL_GENSYN" = true ] && launchctl load -w ~/Library/LaunchAgents/com.gensyn.node.plist
 read -p "Launchd servisi aktivirani. Pritisni Enter..."
 
-# 11. Add user to docker group
-sudo dseditgroup -o edit -a "$USER" -t user docker
-read -p "User dodat u docker grupu. Pritisni Enter..."
-
-# 12. Check if Docker is ready
+# 11. Check if Docker is ready
 if ! docker info >/dev/null 2>&1; then
     echo "Docker not ready yet. Please wait for Docker to finish initializing."
 else
