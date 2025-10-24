@@ -1,10 +1,12 @@
 #!/bin/bash
 
-# Duže čekanje jer Docker treba da se stabilizuje
+# Idi u folder gde je docker-compose.yaml
+cd ~/rl-swarm || exit 1
+
 sleep 40
 
-# Ulazak u folder i pokretanje Expect skripte
-cd ~/autostart_setup || exit 1
+# Update projekta (opciono)
 git pull
-/opt/homebrew/bin/expect ./gensyn_autostart.exp
 
+# Pokreni expect skriptu
+expect ~/autostart_setup/gensyn_autostart.exp
