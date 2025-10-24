@@ -116,12 +116,12 @@ fi
 
 # 7. Gensyn RL-Swarm
 if [ "$INSTALL_GENSYN" = true ]; then
-    if [ -d "${AUTOSTART_DIR}/rl-swarm" ]; then
+    if [ -d ~/rl-swarm ]; then
         echo "Updating existing Gensyn RL-Swarm repo..."
-        cd "${AUTOSTART_DIR}/rl-swarm" && git pull || true
+        cd ~/rl-swarm && git pull
     else
         echo "Cloning Gensyn RL-Swarm repo..."
-        git clone https://github.com/gensyn-ai/rl-swarm.git "${AUTOSTART_DIR}/rl-swarm"
+        git clone https://github.com/gensyn-ai/rl-swarm.git ~/rl-swarm
     fi
     read -p "Gensyn repo spreman. Pritisni Enter..."
 else
