@@ -55,7 +55,7 @@ if [ "$INSTALL_NEXUS" = true ]; then
         echo "Registering Nexus node with wallet: $NEXUS_WALLET"
         nexus-cli register-user --wallet-address "$NEXUS_WALLET"
         read -p "Registracija završena. Pritisni Enter..."
-        nexus-cli initialize
+        nexus-cli register-node
         read -p "Inicijalizacija završena. Pritisni Enter..."
     else
         echo "No Nexus wallet found for hostname: $(hostname)"
