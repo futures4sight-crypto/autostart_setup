@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# Full auto-setup for Mac Mini: installs dependencies, Gensyn/Nexus/Inference, sets LaunchAgents
+# === ENABLE / DISABLE pojedinačnih projekata ===
+INSTALL_GENSYN=true
+INSTALL_NEXUS=true
+INSTALL_INFERENCE=true
 
 echo "Starting full auto-setup..."
 
@@ -31,76 +34,99 @@ read -p "Docker pokrenut. Pritisni Enter..."
 mkdir -p ~/Library/LaunchAgents
 read -p "LaunchAgents folder kreiran. Pritisni Enter..."
 
-# 5. Install Nexus CLI if missing
-if ! command -v nexus-cli &>/dev/null; then
-    echo "Installing Nexus CLI..."
-    curl -fsSL https://cli.nexus.xyz/ | sh
-    read -p "Nexus CLI instaliran. Pritisni Enter..."
+# 5. Nexus installation
+if [ "$INSTALL_NEXUS" = true ]; then
+    if ! command -v nexus-cli &>/dev/null; then
+        echo "Installing Nexus CLI..."
+        curl -fsSL https://cli.nexus.xyz/ | sh
+        read -p "Nexus CLI instaliran. Pritisni Enter..."
+    else
+        echo "Nexus CLI already installed."
+    fi
+
+    if [ ! -f ~/autostart_setup/nexus_wallets.csv ]; then
+        echo "nexus_wallets.csv not found!"
+    fi
+
+    NEXUS_WALLET=$(grep "^$(hostname)," ~/autostart_setup/nexus_wallets.csv | cut -d',' -f2)
+    if [ -n "$NEXUS_WALLET" ]; then
+        echo "Registering Nexus node with wallet: $NEXUS_WALLET"
+        nexus-cli register-user --wallet-address "$NEXUS_WALLET"
+        read -p "Registracija završena. Pritisni Enter..."
+        nexus-cli initialize
+        read -p "Inicijalizacija završena. Pritisni Enter..."
+    else
+        echo "No Nexus wallet found for hostname: $(hostname)"
+    fi
 else
-    echo "Nexus CLI already installed."
+    echo "Nexus instalacija preskočena."
 fi
 
-# 6. Register & initialize Nexus if wallet exists
-NEXUS_WALLET=$(grep "^$(hostname)," ~/autostart_setup/nexus_wallets.csv | cut -d',' -f2)
-if [ -n "$NEXUS_WALLET" ]; then
-    echo "Registering Nexus node with wallet: $NEXUS_WALLET"
-    nexus-cli register-user --wallet-address "$NEXUS_WALLET"
-    read -p "Registracija završena. Pritisni Enter..."
-    nexus-cli initialize
-    read -p "Inicijalizacija završena. Pritisni Enter..."
+# 6. Inference installation
+if [ "$INSTALL_INFERENCE" = true ]; then
+    if ! command -v inference &>/dev/null; then
+        echo "Installing Inference CLI..."
+        curl -fsSL https://devnet.inference.net/install.sh | sh
+        read -p "Inference CLI instaliran. Pritisni Enter..."
+    else
+        echo "Inference CLI already installed."
+    fi
+
+    if [ ! -f ~/autostart_setup/inference_codes.csv ]; then
+        echo "inference_codes.csv not found!"
+    fi
+
+    INFERENCE_CODE=$(grep "^$(hostname)," ~/autostart_setup/inference_codes.csv | cut -d',' -f2)
+
+    if [ -f ~/autostart_setup/inference_start.sh ]; then
+        if [ -n "$INFERENCE_CODE" ]; then
+            echo "Updating inference_start.sh with code: $INFERENCE_CODE"
+            sed -i '' "s/--code .*/--code $INFERENCE_CODE/" ~/autostart_setup/inference_start.sh
+            read -p "Kod ažuriran. Pritisni Enter..."
+        else
+            echo "No Inference code found for hostname: $(hostname)"
+        fi
+    else
+        echo "inference_start.sh not found!"
+    fi
 else
-    echo "No Nexus wallet found for hostname: $(hostname)"
+    echo "Inference instalacija preskočena."
 fi
 
-# 7. Install Inference CLI if missing
-if ! command -v inference &>/dev/null; then
-    echo "Installing Inference CLI..."
-    curl -fsSL https://devnet.inference.net/install.sh | sh
-    read -p "Inference CLI instaliran. Pritisni Enter..."
+# 7. Gensyn RL-Swarm
+if [ "$INSTALL_GENSYN" = true ]; then
+    if [ -d ~/autostart_setup/rl-swarm ]; then
+        echo "Updating existing Gensyn RL-Swarm repo..."
+        cd ~/autostart_setup/rl-swarm && git pull
+    else
+        echo "Cloning Gensyn RL-Swarm repo..."
+        git clone https://github.com/gensyn-ai/rl-swarm.git ~/autostart_setup/rl-swarm
+    fi
+    read -p "Gensyn repo spreman. Pritisni Enter..."
 else
-    echo "Inference CLI already installed."
+    echo "Gensyn instalacija preskočena."
 fi
 
-# 8. Replace hardcoded inference code with value from CSV
-INFERENCE_CODE=$(grep "^$(hostname)," ~/autostart_setup/inference_codes.csv | cut -d',' -f2)
-if [ -n "$INFERENCE_CODE" ]; then
-    echo "Updating inference_start.sh with code: $INFERENCE_CODE"
-    sed -i '' "s/--code .*/--code $INFERENCE_CODE/" ~/autostart_setup/inference_start.sh
-    read -p "Kod ažuriran. Pritisni Enter..."
-else
-    echo "No Inference code found for hostname: $(hostname)"
-fi
-
-# 9. Clone or update Gensyn RL-Swarm repo
-if [ -d ~/autostart_setup/rl-swarm ]; then
-    echo "Updating existing Gensyn RL-Swarm repo..."
-    cd ~/autostart_setup/rl-swarm && git pull
-else
-    echo "Cloning Gensyn RL-Swarm repo..."
-    git clone https://github.com/gensyn-ai/rl-swarm.git ~/autostart_setup/rl-swarm
-fi
-read -p "Gensyn repo spreman. Pritisni Enter..."
-
-# 10. Set execution permissions
+# 8. Set execution permissions
 chmod +x ~/autostart_setup/*.sh
 chmod +x ~/autostart_setup/*.exp
 read -p "Dozvole postavljene. Pritisni Enter..."
 
-# 11. Copy LaunchAgents
+# 9. Copy LaunchAgents
 cp ~/autostart_setup/com.*.plist ~/Library/LaunchAgents/
 read -p "LaunchAgents plist fajlovi kopirani. Pritisni Enter..."
 
-# 12. Load LaunchAgents
-launchctl load -w ~/Library/LaunchAgents/com.inference.node.plist
-launchctl load -w ~/Library/LaunchAgents/com.nexus.node.plist
-launchctl load -w ~/Library/LaunchAgents/com.gensyn.node.plist
+# 10. Load LaunchAgents
+[ "$INSTALL_INFERENCE" = true ] && launchctl load -w ~/Library/LaunchAgents/com.inference.node.plist
+[ "$INSTALL_NEXUS" = true ] && launchctl load -w ~/Library/LaunchAgents/com.nexus.node.plist
+[ "$INSTALL_GENSYN" = true ] && launchctl load -w ~/Library/LaunchAgents/com.gensyn.node.plist
 read -p "Launchd servisi aktivirani. Pritisni Enter..."
 
-# 13. Add user to docker group
+# 11. Add user to docker group
 sudo dseditgroup -o edit -a "$USER" -t user docker
 read -p "User dodat u docker grupu. Pritisni Enter..."
 
-# 14. Check if Docker is ready
+# 12. Check if Docker is ready
 if ! docker info >/dev/null 2>&1; then
     echo "Docker not ready yet. Please wait for Docker to finish initializing."
 else
