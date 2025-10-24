@@ -9,4 +9,4 @@ sleep 40
 git pull
 
 # Pokreni expect skriptu
-expect ~/autostart_setup/gensyn_autostart.exp
+expect ../autostart_setup/gensyn_autostart.exp
