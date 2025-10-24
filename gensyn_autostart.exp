@@ -1,10 +1,8 @@
 #!/usr/bin/expect -f
 
-# Pokrećemo RL Swarm node
-cd ~/autostart_setup
+cd ~/rl-swarm
 spawn docker-compose run --rm --build -Pit swarm-cpu
 
-# Otvori localhost link automatski u Firefoxu kad se pojavi poruka
 expect {
     -re ">> Please open http://localhost:3000.*" {
         exec open -a "Firefox" http://localhost:3000
@@ -13,7 +11,6 @@ expect {
     }
 }
 
-# Odgovori na pitanja automatski
 expect {
     -re "Would you like to push models.*" { send "n\r" }
 }
@@ -24,6 +21,4 @@ expect {
     -re "AI Prediction Market.*" { send "n\r" }
 }
 
-# Preuzimanje kontrole terminala
 interact
-
