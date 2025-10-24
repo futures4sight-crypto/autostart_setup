@@ -1,9 +1,17 @@
 #!/bin/bash
-
-# Kratko čekanje nakon boota
 sleep 20
 
-# Instalacija i startovanje Inference noda
-curl -fsSL https://devnet.inference.net/install.sh | sh
-/usr/local/bin/inference node start --code b4b901af-9b33-4b33-9ecc-13e4ed6dc317
+# Pretpostavljamo da je skripta klonirana sa GitHuba i CSV postoji lokalno
+SCRIPT_DIR=~/autostart_setup
+NODE_NAME=$(hostname)
 
+# Ako failuje pronalaženje koda, izbaciti poruku
+CODE=$(grep "^$NODE_NAME," "$SCRIPT_DIR/inference_codes.csv" | cut -d',' -f2)
+
+if [ -z "$CODE" ]; then
+    echo "❌ ERROR: Inference code not found for $NODE_NAME in inference_codes.csv"
+    exit 1
+fi
+
+echo "✅ Starting inference node for $NODE_NAME with code: $CODE"
+/usr/local/bin/inference node start --code "$CODE"
