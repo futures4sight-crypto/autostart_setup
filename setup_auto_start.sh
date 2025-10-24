@@ -40,6 +40,7 @@ if [ "$INSTALL_NEXUS" = true ]; then
     if ! command -v nexus-cli &>/dev/null; then
         echo "Installing Nexus CLI..."
         curl -fsSL https://cli.nexus.xyz/ | sh
+        source ~/.zshrc
         read -p "Nexus CLI instaliran. Pritisni Enter..."
     else
         echo "Nexus CLI already installed."
