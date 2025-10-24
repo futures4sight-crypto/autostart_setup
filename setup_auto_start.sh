@@ -21,7 +21,8 @@ fi
 # 2. Install required packages
 brew install --cask firefox
 brew install --cask docker
-brew install --cask clash-verge
+brew install --cask clash-verge-rev
+sudo xattr -r -d com.apple.quarantine /Applications/Clash\ Verge.app
 brew install expect wget git
 read -p "Svi paketi instalirani. Pritisni Enter..."
 
