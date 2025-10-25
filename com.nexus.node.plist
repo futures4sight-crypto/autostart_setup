@@ -7,19 +7,13 @@
 
     <key>ProgramArguments</key>
     <array>
+        <string>/usr/bin/open</string>
+        <string>-a</string>
+        <string>Terminal</string>
         <string>/Users/mita/autostart_setup/nexus_start.sh</string>
     </array>
 
     <key>RunAtLoad</key>
     <true/>
-
-    <key>KeepAlive</key>
-    <true/>
-
-    <key>StandardOutPath</key>
-    <string>/Users/mita/autostart_setup/logs/nexus_stdout.log</string>
-
-    <key>StandardErrorPath</key>
-    <string>/Users/mita/autostart_setup/logs/nexus_stderr.log</string>
 </dict>
 </plist>
