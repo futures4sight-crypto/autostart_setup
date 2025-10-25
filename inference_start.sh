@@ -1,5 +1,5 @@
 #!/bin/bash
-sleep 20
+sleep 40
 
 SCRIPT_DIR=~/autostart_setup
 NODE_NAME=$(hostname)

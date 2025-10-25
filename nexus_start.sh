@@ -1,5 +1,5 @@
 #!/bin/bash
-sleep 20
+sleep 30
 
 export PATH="$HOME/.nexus/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
 
