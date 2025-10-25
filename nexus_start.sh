@@ -1,6 +1,8 @@
 #!/bin/bash
 sleep 20
 
+export PATH="$HOME/.nexus/bin:$PATH"
+
 # Instalacija Nexus CLI ako nije već instaliran
 if ! command -v nexus-cli &> /dev/null; then
     echo "Installing Nexus CLI..."
