@@ -9,21 +9,21 @@ AUTOSTART_DIR="$HOME/autostart_setup"
 
 echo "Starting full auto-setup..."
 
-# 1. Install Homebrew if missing
-if ! command -v brew &>/dev/null; then
-    echo "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-    read -p "Homebrew instaliran. Pritisni Enter za nastavak..."
-else
-    echo "Homebrew already installed."
-fi
+## 1. Install Homebrew if missing
+# if ! command -v brew &>/dev/null; then
+#     echo "Installing Homebrew..."
+#     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+#     echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+#     eval "$(/opt/homebrew/bin/brew shellenv)"
+#     read -p "Homebrew instaliran. Pritisni Enter za nastavak..."
+# else
+#     echo "Homebrew already installed."
+# fi
 
 # 2. Install required packages
-brew install --cask firefox
-brew install --cask docker
-brew install --cask clash-verge-rev
+# brew install --cask firefox
+# brew install --cask docker
+# brew install --cask clash-verge-rev
 # if Clash Verge app name differs, this will silently fail; it's fine
 sudo xattr -r -d com.apple.quarantine /Applications/Clash\ Verge.app 2>/dev/null || true
 brew install expect wget git
