@@ -1,12 +1,12 @@
 #!/usr/bin/expect -f
 
 cd ~/rl-swarm
-spawn docker-compose run --rm --build -Pit swarm-cpu
+spawn docker-compose run -Pit swarm-cpu
 
 expect {
     -re ">> Please open http://localhost:3000.*" {
         exec open -a "Firefox" http://localhost:3000
-        sleep 8
+        sleep 30
         exec osascript -e {tell application "Firefox" to quit}
     }
 }
