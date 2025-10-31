@@ -11,7 +11,7 @@ echo "⏳ Checking Docker daemon..."
 RETRIES=30
 until docker info >/dev/null 2>&1; do
     echo "⏳ Waiting for Docker to start..."
-    sleep 30
+    sleep 60
     RETRIES=$((RETRIES - 1))
     if [ $RETRIES -le 0 ]; then
         echo "Docker not responding after 90 seconds. Aborting..."
