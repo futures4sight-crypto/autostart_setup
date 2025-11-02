@@ -5,16 +5,19 @@ set timeout -1
 cd ~/rl-swarm
 spawn bash run_rl_swarm.sh
 
-expect -re {Would you like to push models.*Hub\?} {
-    send "n\r"
+expect {
+    -re {>> Would you like to push models you train in the RL swarm to the Hugging Face Hub\?.*} {
+        send "n\r"
+        exp_continue
+    }
+    -re {>> Enter the name of the model you want to use in huggingface repo/name format.*} {
+        send "\r"
+        exp_continue
+    }
+    -re {>> Would you like your model to participate in the AI Prediction Market\?.*} {
+        send "n\r"
+        exp_continue
+    }
+    eof
 }
-
-expect -re {Enter the name of the model.*default model\.} {
-    send "\r"
-}
-
-expect -re {Would you like your model to participate.*Prediction Market\?} {
-    send "n\r"
-}
-
 interact
