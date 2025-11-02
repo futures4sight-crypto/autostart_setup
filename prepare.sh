@@ -1,20 +1,25 @@
 #!/bin/bash
-# =====================================================
-# Mac setup script for Gensyn environment (Python + Node + Yarn)
-# =====================================================
+# ================================================
+# macOS Environment Setup Script
+# Python 3.10 + Node.js + Corepack + Yarn
+# Tested on macOS Sequoia / Apple Silicon / China network
+# ================================================
+
 DATEFMT="+%Y-%m-%d %H:%M:%S"
 
-echo "[$(date "$DATEFMT")] 🚀 Starting setup..."
+echo "[$(date "$DATEFMT")] 🚀 Starting environment setup..."
 
-# --- Install Homebrew if missing ---
+# --- Homebrew ---
 if ! command -v brew >/dev/null 2>&1; then
-  echo "[$(date "$DATEFMT")] 🍺 Installing Homebrew..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  echo "[$(date "$DATEFMT")] 🧱 Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/install.sh)"
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 else
   echo "[$(date "$DATEFMT")] ✅ Homebrew already installed."
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-# --- Install Python 3.10 ---
+# --- Python 3.10 ---
 if ! brew list python@3.10 >/dev/null 2>&1; then
   echo "[$(date "$DATEFMT")] 🐍 Installing Python 3.10..."
   brew install python@3.10
@@ -22,16 +27,24 @@ else
   echo "[$(date "$DATEFMT")] ✅ Python 3.10 already installed."
 fi
 
-# Link Python 3.10 as default python3
 echo "[$(date "$DATEFMT")] 🔗 Linking Python 3.10..."
 brew unlink python >/dev/null 2>&1
 brew link python@3.10 --force --overwrite
 
-# Verify Python version
+# --- Force global executables ---
+echo "[$(date "$DATEFMT")] 🔧 Forcing Python 3.10 as default..."
+sudo ln -sf /opt/homebrew/bin/python3.10 /opt/homebrew/bin/python3
+sudo ln -sf /opt/homebrew/bin/python3.10 /opt/homebrew/bin/python
+sudo ln -sf /opt/homebrew/bin/pip3.10 /opt/homebrew/bin/pip3
+sudo ln -sf /opt/homebrew/bin/pip3.10 /opt/homebrew/bin/pip
+
+echo "[$(date "$DATEFMT")] ✅ Python 3.10 set as default system interpreter."
+
 echo "[$(date "$DATEFMT")] 🧩 Python version check:"
 python3 --version
+pip3 --version
 
-# --- Install Node.js ---
+# --- Node.js ---
 if ! command -v node >/dev/null 2>&1; then
   echo "[$(date "$DATEFMT")] 📦 Installing Node.js..."
   brew install node
@@ -39,25 +52,20 @@ else
   echo "[$(date "$DATEFMT")] ✅ Node.js already installed."
 fi
 
-# --- Enable Corepack or install manually ---
-echo "[$(date "$DATEFMT")] ⚙️ Enabling Corepack..."
-if ! command -v corepack >/dev/null 2>&1; then
-  echo "[$(date "$DATEFMT")] ❌ Corepack not found, installing manually..."
-  npm install -g corepack
-else
-  echo "[$(date "$DATEFMT")] ✅ Corepack available."
-fi
+node -v
 
-corepack enable || npm install -g corepack
+# --- Corepack + Yarn ---
+echo "[$(date "$DATEFMT")] ⚙️ Installing Corepack + Yarn..."
+npm install -g corepack
+corepack enable
+corepack prepare yarn@1.22.19 --activate
+yarn -v
 
-# --- Prepare Yarn (specific version 1.22.19) ---
-echo "[$(date "$DATEFMT")] 🧶 Setting up Yarn 1.22.19..."
-corepack prepare yarn@1.22.19 --activate || npm install -g yarn@1.22.19
-
-# --- Final checks ---
-echo "[$(date "$DATEFMT")] 🔍 Final version check:"
+# --- Final check ---
+echo "[$(date "$DATEFMT")] 🔍 Final environment versions:"
 python3 --version
-node --version
-yarn --version
+node -v
+corepack -v
+yarn -v
 
-echo "[$(date "$DATEFMT")] ✅ Environment setup completed!"
+echo "[$(date "$DATEFMT")] ✅ Environment setup completed successfully!"
