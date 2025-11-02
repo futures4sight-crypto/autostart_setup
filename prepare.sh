@@ -1,71 +1,75 @@
 #!/bin/bash
-# ================================================
-# macOS Environment Setup Script
-# Python 3.10 + Node.js + Corepack + Yarn
-# Tested on macOS Sequoia / Apple Silicon / China network
-# ================================================
-
+# ======================================================
+# prepare.sh – Environment bootstrap for RL-Swarm (macOS)
+# ======================================================
 DATEFMT="+%Y-%m-%d %H:%M:%S"
 
-echo "[$(date "$DATEFMT")] 🚀 Starting environment setup..."
+log() { echo "[$(date "$DATEFMT")] $1"; }
 
-# --- Homebrew ---
-if ! command -v brew >/dev/null 2>&1; then
-  echo "[$(date "$DATEFMT")] 🧱 Installing Homebrew..."
-  /bin/bash -c "$(curl -fsSL https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/install.sh)"
-  eval "$(/opt/homebrew/bin/brew shellenv)"
+log "🚀 Starting setup..."
+
+# --- Ensure Homebrew ---
+if ! command -v brew &>/dev/null; then
+  log "⬇️ Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 else
-  echo "[$(date "$DATEFMT")] ✅ Homebrew already installed."
-  eval "$(/opt/homebrew/bin/brew shellenv)"
+  log "✅ Homebrew already installed."
 fi
 
 # --- Python 3.10 ---
-if ! brew list python@3.10 >/dev/null 2>&1; then
-  echo "[$(date "$DATEFMT")] 🐍 Installing Python 3.10..."
-  brew install python@3.10
+log "🐍 Installing Python 3.10..."
+if ! brew list python@3.10 &>/dev/null; then
+  HOMEBREW_NO_AUTO_UPDATE=1 brew install python@3.10 || {
+    log "⚠️  Could not fetch bottles online, using cached Homebrew files if available..."
+    HOMEBREW_NO_AUTO_UPDATE=1 brew reinstall python@3.10
+  }
 else
-  echo "[$(date "$DATEFMT")] ✅ Python 3.10 already installed."
+  log "✅ Python 3.10 already present."
 fi
 
-echo "[$(date "$DATEFMT")] 🔗 Linking Python 3.10..."
-brew unlink python >/dev/null 2>&1
-brew link python@3.10 --force --overwrite
-
-# --- Force global executables ---
-echo "[$(date "$DATEFMT")] 🔧 Forcing Python 3.10 as default..."
+log "🔗 Fixing Python 3.10 symlinks..."
 sudo ln -sf /opt/homebrew/bin/python3.10 /opt/homebrew/bin/python3
 sudo ln -sf /opt/homebrew/bin/python3.10 /opt/homebrew/bin/python
-sudo ln -sf /opt/homebrew/bin/pip3.10 /opt/homebrew/bin/pip3
-sudo ln -sf /opt/homebrew/bin/pip3.10 /opt/homebrew/bin/pip
+sudo ln -sf /opt/homebrew/opt/python@3.10/libexec/bin/pip3 /opt/homebrew/bin/pip3
+sudo ln -sf /opt/homebrew/opt/python@3.10/libexec/bin/pip3 /opt/homebrew/bin/pip
 
-echo "[$(date "$DATEFMT")] ✅ Python 3.10 set as default system interpreter."
-
-echo "[$(date "$DATEFMT")] 🧩 Python version check:"
+log "🧩 Python version check:"
 python3 --version
 pip3 --version
 
 # --- Node.js ---
-if ! command -v node >/dev/null 2>&1; then
-  echo "[$(date "$DATEFMT")] 📦 Installing Node.js..."
-  brew install node
+log "📦 Installing Node.js..."
+if ! brew list node &>/dev/null; then
+  HOMEBREW_NO_AUTO_UPDATE=1 brew install node || {
+    log "⚠️  Node install via brew failed; retrying cached reinstall..."
+    HOMEBREW_NO_AUTO_UPDATE=1 brew reinstall node
+  }
 else
-  echo "[$(date "$DATEFMT")] ✅ Node.js already installed."
+  log "✅ Node.js already installed."
 fi
 
-node -v
+# --- Corepack & Yarn ---
+log "⚙️ Enabling Corepack..."
+if ! command -v corepack &>/dev/null; then
+  log "❌ Corepack not found, installing manually..."
+  npm install -g corepack
+fi
 
-# --- Corepack + Yarn ---
-echo "[$(date "$DATEFMT")] ⚙️ Installing Corepack + Yarn..."
-npm install -g corepack
-corepack enable
-corepack prepare yarn@1.22.19 --activate
-yarn -v
+log "🧶 Setting up Yarn 1.22.19..."
+corepack prepare yarn@1.22.19 --activate || npm install -g yarn
+
+# --- PATH persistence ---
+if ! grep -q "/opt/homebrew/opt/python@3.10/libexec/bin" ~/.zshrc; then
+  echo 'export PATH="/opt/homebrew/bin:/opt/homebrew/opt/python@3.10/libexec/bin:$PATH"' >> ~/.zshrc
+  source ~/.zshrc
+  log "✅ PATH updated and saved to ~/.zshrc"
+fi
 
 # --- Final check ---
-echo "[$(date "$DATEFMT")] 🔍 Final environment versions:"
+log "🔍 Final version check:"
 python3 --version
+pip3 --version
 node -v
-corepack -v
 yarn -v
 
-echo "[$(date "$DATEFMT")] ✅ Environment setup completed successfully!"
+log "✅ Environment setup completed successfully!"
