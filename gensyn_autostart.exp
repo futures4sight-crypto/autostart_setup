@@ -1,24 +1,20 @@
 #!/usr/bin/expect -f
+log_user 1
+set timeout -1
 
 cd ~/rl-swarm
-spawn docker-compose run -Pit swarm-cpu
+spawn bash run_rl_swarm.sh
 
-expect {
-    -re ">> Please open http://localhost:3000.*" {
-        exec open -a "Firefox" http://localhost:3000
-        sleep 60
-        exec osascript -e {tell application "Firefox" to quit}
-    }
+expect -re {Would you like to push models.*Hub\?} {
+    send "n\r"
 }
 
-expect {
-    -re "Would you like to push models.*" { send "n\r" }
+expect -re {Enter the name of the model.*default model\.} {
+    send "\r"
 }
-expect {
-    -re "Enter the name.*" { send "\r" }
-}
-expect {
-    -re "AI Prediction Market.*" { send "n\r" }
+
+expect -re {Would you like your model to participate.*Prediction Market\?} {
+    send "n\r"
 }
 
 interact
