@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.gensyn.watcher</string>
+    <string>com.gensyn.watchdog</string>
 
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>sleep 30 && open -a Terminal /Users/satbaba2025b/autostart_setup/gensyn.watcher.sh</string>
+        <string>sleep 30 && open -a Terminal /Users/satbaba2025b/autostart_setup/gensyn_watchdog.sh</string>
     </array>
 
     <key>RunAtLoad</key>
