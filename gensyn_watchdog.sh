@@ -5,8 +5,8 @@
 # ============================================================
 
 LOG_FILE="$HOME/rl-swarm/logs/swarm_launcher.log"
-CHECK_INTERVAL=300           # check every 5 minutes
-STALE_THRESHOLD=900          # restart if log older than 15 min
+CHECK_INTERVAL=120           # check every 2 minutes
+STALE_THRESHOLD=300          # restart if log older than 5 min
 HISTORY_FILE="$HOME/autostart_setup/watchdog_history.log"
 DATEFMT="+%Y-%m-%d %H:%M:%S"
 
