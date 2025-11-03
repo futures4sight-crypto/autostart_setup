@@ -72,4 +72,22 @@ pip3 --version
 node -v
 yarn -v
 
+# --- Virtual Environment (force 3.10) ---
+log "🧱 Setting up Python 3.10 virtual environment for RL-Swarm..."
+cd ~/rl-swarm || { log "❌ Folder ~/rl-swarm not found!"; exit 1; }
+
+if [ -d ".venv" ]; then
+  log "🧹 Removing old virtual environment (wrong Python version)..."
+  rm -rf .venv
+fi
+
+/opt/homebrew/bin/python3.10 -m venv .venv
+source .venv/bin/activate
+python --version
+python -m ensurepip --upgrade
+python -m pip install --upgrade pip setuptools wheel
+log "✅ Virtual environment created using Python 3.10."
+
 log "✅ Environment setup completed successfully!"
+
+
