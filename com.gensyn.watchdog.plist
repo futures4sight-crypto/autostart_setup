@@ -9,7 +9,7 @@
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>sleep 30 && open -a Terminal /Users/satbaba2025b/autostart_setup/gensyn_watchdog.sh</string>
+        <string>sleep 30 &amp;&amp; osascript -e 'tell application "Terminal" to do script "expect /Users/satbaba2025001b/autostart_setup/gensyn_doker_watchdog.sh"; activate'</string>
     </array>
 
     <key>RunAtLoad</key>
