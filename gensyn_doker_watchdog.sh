@@ -19,9 +19,9 @@ while true; do
   container_id=$(docker ps -q -f name=$CONTAINER_NAME)
 
   if [ -z "$container_id" ]; then
-    echo "[$(date "$DATEFMT")] ⚠️  Container not running — starting fresh..." | tee -a "$HISTORY_FILE"
+    echo "[$(date "$DATEFMT")] ⚠️  Container not running — starting via Expect..." | tee -a "$HISTORY_FILE"
     osascript -e 'tell application "Terminal"
-        do script "cd ~/rl-swarm && docker-compose run --rm -Pit swarm-cpu"
+        do script "expect ~/autostart_setup/gensyn_docker_autostart.exp"
         activate
     end tell'
     sleep $CHECK_INTERVAL

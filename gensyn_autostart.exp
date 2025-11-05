@@ -1,23 +1,60 @@
 #!/usr/bin/expect -f
+# ============================================================
+# GENSYN DOCKER AUTOSTART (macOS + Expect)
+# Pokreće docker swarm-cpu node, automatski otvara dashboard,
+# osvežava (F5), zatvara Firefox, i odgovara na pitanja.
+# ============================================================
+
 log_user 1
 set timeout -1
 
+# Idi u RL-Swarm folder
 cd ~/rl-swarm
-spawn bash run_rl_swarm.sh
 
+# Pokreni swarm-cpu kontejner
+spawn bash -lc {docker compose run --rm -Pit swarm-cpu}
+
+# Obradi poruke i automatske odgovore
 expect {
-    -re {>> Would you like to push models you train in the RL swarm to the Hugging Face Hub\?.*} {
+    -re {>> Please open http://localhost:3000.*} {
+        # Pokušaj otvoriti Firefox; ako ne postoji koristi default browser
+        if {[catch {exec open -a Firefox http://localhost:3000}]} {
+            exec open http://localhost:3000
+        }
+
+        # Sačekaj 5 sekundi da se browser otvori
+        after 5000
+
+        # ⚡ Osveži tab (Command + R)
+        catch {exec osascript -e {tell application "Firefox" to activate}}
+        catch {exec osascript -e {tell application "System Events" to keystroke "r" using command down}}
+
+        # Pusti dashboard 60 sekundi, zatim zatvori Firefox
+        after 60000
+        catch {exec osascript -e {tell application "Firefox" to quit}}
+
+        exp_continue
+    }
+
+    -re {>> Would you like to push models.*Hugging Face.*\?} {
         send "n\r"
         exp_continue
     }
+
     -re {>> Enter the name of the model you want to use in huggingface repo/name format.*} {
         send "\r"
         exp_continue
     }
-    -re {>> Would you like your model to participate in the AI Prediction Market\?.*} {
+
+    -re {>> Would you like your model to participate in the AI Prediction Market.*\?} {
         send "n\r"
         exp_continue
     }
-    eof
+
+    eof {
+        # proces završio
+    }
 }
+
+# Ostani interaktivan da vidiš RL-Swarm log
 interact
