@@ -4,7 +4,7 @@
 # Automatski nadzor i restart RL-Swarm kontejnera
 # ============================================
 
-CONTAINER_NAME="swarm-cpu"          # ime Docker kontejnera koji se prati
+CONTAINER_NAME="rl-swarm-swarm-cpu-1"          # ime Docker kontejnera koji se prati
 CHECK_INTERVAL=180                  # interval provere (u sekundama) – 3 minuta
 LOG_FILE="swarm_launcher.log"       # ime log fajla koji se nadgleda
 STALE_LOG_THRESHOLD=900             # prag zastarelosti loga (u sekundama) – 15 minuta
