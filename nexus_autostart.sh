@@ -1,13 +1,15 @@
-
 #!/bin/bash
 # ======================================================
-# nexus_autostart.sh – minimal setup & start script
+# nexus_autostart.sh – minimal Nexus setup & start script
 # ======================================================
 
 set -e
+source ~/.zshrc 2>/dev/null || true  # učitaj okruženje ako postoji
+
 DATEFMT="+%Y-%m-%d %H:%M:%S"
 NODE_FILE="$HOME/.nexus-node-id"
 LOG_FILE="$HOME/nexus_autostart.log"
+USER_FLAG="$HOME/.nexus-user-registered"
 WALLET="0x9Ff501255C9917D11780c050BaEfF9dCc6d71c27"
 
 log() { echo "[$(date "$DATEFMT")] $1" | tee -a "$LOG_FILE"; }
@@ -18,14 +20,14 @@ log "🚀 Starting Nexus setup..."
 if ! command -v nexus-network &>/dev/null; then
   log "⬇️ Installing Nexus CLI..."
   curl -fsSL https://cli.nexus.xyz/ | sh
-  export PATH="$HOME/.local/bin:$HOME/.nexus/bin:$PATH"
+  source ~/.zshrc 2>/dev/null || export PATH="$HOME/.local/bin:$HOME/.nexus/bin:$PATH"
 fi
 
 # 2️⃣ Register user if not already done
-if [ ! -f "$HOME/.nexus-user-registered" ]; then
+if [ ! -f "$USER_FLAG" ]; then
   log "🆕 Registering user..."
   nexus-network register-user --wallet-address "$WALLET" | tee -a "$LOG_FILE"
-  touch "$HOME/.nexus-user-registered"
+  touch "$USER_FLAG"
 else
   log "✅ User already registered."
 fi
