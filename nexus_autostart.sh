@@ -1,52 +1,68 @@
 #!/bin/bash
 # ======================================================
-# nexus_autostart.sh – minimal Nexus setup & start script
+# nexus_autostart.sh – jednostavan i jasan setup Nexus node-a
 # ======================================================
 
-set -e
-source ~/.zshrc 2>/dev/null || true  # učitaj okruženje ako postoji
+# Učitaj zsh okruženje ako postoji
+if [ -f "$HOME/.zshrc" ]; then
+  echo "📂 Učitavam okruženje (~/.zshrc)..."
+  source "$HOME/.zshrc"
+fi
 
-DATEFMT="+%Y-%m-%d %H:%M:%S"
 NODE_FILE="$HOME/.nexus-node-id"
-LOG_FILE="$HOME/nexus_autostart.log"
 USER_FLAG="$HOME/.nexus-user-registered"
 WALLET="0x9Ff501255C9917D11780c050BaEfF9dCc6d71c27"
+LOG_FILE="$HOME/nexus_autostart.log"
 
-log() { echo "[$(date "$DATEFMT")] $1" | tee -a "$LOG_FILE"; }
+echo "====================================================="
+echo "🚀 Pokrećem Nexus setup..."
+echo "📄 Log fajl: $LOG_FILE"
+echo "====================================================="
 
-log "🚀 Starting Nexus setup..."
-
-# 1️⃣ Install CLI if missing
+# 1️⃣ Proveri da li postoji nexus-network CLI
 if ! command -v nexus-network &>/dev/null; then
-  log "⬇️ Installing Nexus CLI..."
+  echo "⬇️  Nexus CLI nije pronađen — instaliram..."
   curl -fsSL https://cli.nexus.xyz/ | sh
-  source ~/.zshrc 2>/dev/null || export PATH="$HOME/.local/bin:$HOME/.nexus/bin:$PATH"
-fi
-
-# 2️⃣ Register user if not already done
-if [ ! -f "$USER_FLAG" ]; then
-  log "🆕 Registering user..."
-  nexus-network register-user --wallet-address "$WALLET" | tee -a "$LOG_FILE"
-  touch "$USER_FLAG"
+  source "$HOME/.zshrc" 2>/dev/null || export PATH="$HOME/.local/bin:$HOME/.nexus/bin:$PATH"
 else
-  log "✅ User already registered."
+  echo "✅ Nexus CLI već postoji."
 fi
 
-# 3️⃣ Register node if missing
+# 2️⃣ Registracija korisnika
+if [ ! -f "$USER_FLAG" ]; then
+  echo "🆕 Registrujem korisnika..."
+  nexus-network register-user --wallet-address "$WALLET" | tee -a "$LOG_FILE"
+  if [ $? -eq 0 ]; then
+    echo "✅ Korisnik registrovan."
+    touch "$USER_FLAG"
+  else
+    echo "⚠️  Neuspešna registracija korisnika!"
+  fi
+else
+  echo "✅ Korisnik je već registrovan ranije."
+fi
+
+# 3️⃣ Registracija node-a
 if [ ! -f "$NODE_FILE" ]; then
-  log "🆕 Registering node..."
+  echo "🆕 Registrujem node..."
   OUT=$(nexus-network register-node 2>&1 | tee -a "$LOG_FILE")
   NODE_ID=$(echo "$OUT" | grep -oE "id: [a-zA-Z0-9-]+" | awk '{print $2}')
   if [ -n "$NODE_ID" ]; then
     echo "$NODE_ID" > "$NODE_FILE"
-    log "✅ Node registered with ID: $NODE_ID"
+    echo "✅ Node registrovan sa ID: $NODE_ID"
   else
-    log "⚠️ Could not extract Node ID. Check log."
+    echo "⚠️  Nije pronađen Node ID u izlazu. Pogledaj log."
   fi
 else
-  log "✅ Node already registered with ID: $(cat $NODE_FILE)"
+  echo "✅ Node je već registrovan (ID: $(cat $NODE_FILE))"
 fi
 
-# 4️⃣ Start node
-log "▶️ Starting node..."
+# 4️⃣ Pokretanje node-a
+echo "▶️  Pokrećem Nexus node..."
+sleep 1
 nexus-network start | tee -a "$LOG_FILE"
+
+echo "====================================================="
+echo "🎯 Završeno! Ako se node pokrenuo uspešno, ID je:"
+cat "$NODE_FILE" 2>/dev/null || echo "⚠️ Node ID nije pronađen."
+echo "====================================================="
