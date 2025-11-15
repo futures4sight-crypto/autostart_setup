@@ -68,8 +68,8 @@ while true; do
                     restart_needed=1
                 fi
             else
-                echo "[$(date +'%Y-%m-%d %H:%M:%S')] Log fajl $LOG_FILE ne postoji!"
-                restart_needed=1
+                echo "[$(date +'%Y-%m-%d %H:%M:%S')] Log fajl $LOG_FILE ne postoji! (preskačem)"
+                continue    # ignoriši, ne restartuj ništa
             fi
         fi
     done
