@@ -54,6 +54,15 @@ while true; do
                 echo "[$(date +'%Y-%m-%d %H:%M:%S')] Detektovan ConnectionRefusedError u RL-Swarm logu!"
                 restart_needed=1
             fi
+            # ------------------------------------------------------
+            # Detekcija kritičnih grešaka u RL-Swarm logu
+            # ------------------------------------------------------
+            if [ -f "$LOG_FILE" ]; then
+                if tail -n 80 "$LOG_FILE" | grep -q -E "\[Errno 101\] Network is unreachable|Failed to establish a new connection"; then
+                    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Detektovana mrežna greška (Errno 101 / Failed to establish)!"
+                    restart_needed=1
+                fi
+            fi
 
         else
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] Log fajl $LOG_FILE ne postoji! (restartujem)"
