@@ -46,6 +46,15 @@ while true; do
                 echo "[$(date +'%Y-%m-%d %H:%M:%S')] Upozorenje: RL-Swarm log nije ažuriran!"
                 restart_needed=1
             fi
+
+            # ------------------------------------------------------
+            # NOVO — detekcija ConnectionRefusedError u RL-Swarm logu
+            # ------------------------------------------------------
+            if tail -n 50 "$LOG_FILE" | grep -q -E "ConnectionRefusedError|\[Errno 111\] Connection refused"; then
+                echo "[$(date +'%Y-%m-%d %H:%M:%S')] Detektovan ConnectionRefusedError u RL-Swarm logu!"
+                restart_needed=1
+            fi
+
         else
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] Log fajl $LOG_FILE ne postoji! (restartujem)"
             restart_needed=1
