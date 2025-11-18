@@ -58,8 +58,8 @@ while true; do
             # Detekcija kritičnih grešaka u RL-Swarm logu
             # ------------------------------------------------------
             if [ -f "$LOG_FILE" ]; then
-                if tail -n 80 "$LOG_FILE" | grep -q -E "\[Errno 101\] Network is unreachable|Failed to establish a new connection"; then
-                    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Detektovana mrežna greška (Errno 101 / Failed to establish)!"
+                if tail -n 100 "$LOG_FILE" | grep -q -E "\[Errno 101\] Network is unreachable|Failed to establish a new connection|Shutting down trainer|No such process"; then
+                    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Detektovana kritična RL-Swarm greška (trainer/mreža)!"
                     restart_needed=1
                 fi
             fi
