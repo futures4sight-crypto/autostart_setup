@@ -63,7 +63,7 @@ while true; do
             # Detekcija kritičnih grešaka → odmah restart
             # ------------------------------------------------------
             if tail -n 100 "$LOG_FILE" | grep -q -E \
-                "\[Errno 101\] Network is unreachable|Failed to establish a new connection|Shutting down trainer|No such process"; then
+                "\[Errno 101\] Network is unreachable|Failed to establish a new connection|Shutting down trainer|No such process|\[Errno -2\] Name or service not known"; then
                 
                 echo "[$(date +'%Y-%m-%d %H:%M:%S')] Detektovana kritična mrežna greška/trainer pad!"
                 restart_needed=1
