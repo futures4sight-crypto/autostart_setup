@@ -12,6 +12,10 @@ LOG_FILE="swarm_launcher.log"
 CHECK_INTERVAL=180
 STALE_LOG_THRESHOLD=900
 
+# Timeout za slučaj da log nikad ne izađe
+LOG_MISSING_COUNT=0
+LOG_MISSING_MAX=10   # 10 × 180 sek = 1800 sec (30 min)
+
 # Detekcija OS-a
 if [[ "$(uname)" == "Darwin" ]]; then
     STAT_CMD="stat -f %m"
@@ -37,14 +41,18 @@ while true; do
     if ! docker ps --filter "name=^/${SWARM_CONTAINER}$" --format '{{.Names}}' | grep -q "$SWARM_CONTAINER"; then
         echo "[$(date +'%Y-%m-%d %H:%M:%S')] RL-Swarm kontejner je zaustavljen!"
         restart_needed=1
+
     else
         if [ -f "$LOG_FILE" ]; then
+            # Log postoji → počinjemo normalne provere
+            LOG_MISSING_COUNT=0
+
             log_mtime=$($STAT_CMD "$LOG_FILE")
             time_diff=$((current_time - log_mtime))
 
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] RL-Swarm radi – log update pre $time_diff sekundi"
 
-            # Ako log predugo nije ažuriran
+            # Log prestao da se ažurira
             if [ "$time_diff" -gt "$STALE_LOG_THRESHOLD" ]; then
                 echo "[$(date +'%Y-%m-%d %H:%M:%S')] Upozorenje: RL-Swarm log nije ažuriran!"
                 restart_needed=1
@@ -60,19 +68,26 @@ while true; do
             fi
 
             # ------------------------------------------------------
-            # Detekcija kritičnih grešaka → odmah restart
+            # Detekcija kritičnih mrežnih grešaka + trainer crash
             # ------------------------------------------------------
             if tail -n 100 "$LOG_FILE" | grep -q -E \
                 "\[Errno 101\] Network is unreachable|Failed to establish a new connection|Shutting down trainer|No such process|\[Errno -2\] Name or service not known"; then
-                
+
                 echo "[$(date +'%Y-%m-%d %H:%M:%S')] Detektovana kritična mrežna greška/trainer pad!"
                 restart_needed=1
                 clash_restart_required=1
             fi
 
         else
-            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Log fajl ne postoji! (restartujem)"
-            restart_needed=1
+            # Log još nije izašao i container radi
+            LOG_MISSING_COUNT=$((LOG_MISSING_COUNT + 1))
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] RL-Swarm radi, ali log još nije kreiran (brojač: $LOG_MISSING_COUNT/$LOG_MISSING_MAX)"
+
+            if [ "$LOG_MISSING_COUNT" -ge "$LOG_MISSING_MAX" ]; then
+                echo "[$(date +'%Y-%m-%d %H:%M:%S')] Log se NIJE pojavio ni posle dugog čekanja – restartujem RL-Swarm + Clash Verge!"
+                restart_needed=1
+                clash_restart_required=1
+            fi
         fi
     fi
 
