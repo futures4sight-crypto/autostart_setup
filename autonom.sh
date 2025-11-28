@@ -1,22 +1,16 @@
 #!/bin/bash
 # ======================================================
-# swarm_watchdog.sh
-# Automatski nadzor i restart RL-Swarm, Ollama i Clash Verge
+# swarm_watchdog.sh – jednostavan i stabilan nadzor
 # ======================================================
 
 SWARM_CONTAINER="rl-swarm-swarm-cpu-1"
 OLLAMA_CONTAINER="rl-swarm-ollama-1"
 
 LOG_FILE="swarm_launcher.log"
-
 CHECK_INTERVAL=180
-STALE_LOG_THRESHOLD=900
+STALE_LOG_THRESHOLD=900   # 15 minuta
 
-# Timeout za slučaj da log nikad ne izađe
-LOG_MISSING_COUNT=0
-LOG_MISSING_MAX=10   # 10 × 180 sek = 1800 sec (30 min)
-
-# Detekcija OS-a
+# OS detection for stat
 if [[ "$(uname)" == "Darwin" ]]; then
     STAT_CMD="stat -f %m"
 else
@@ -24,117 +18,86 @@ else
 fi
 
 echo "======================================================"
-echo "[$(date +'%Y-%m-%d %H:%M:%S')] Pokrećem nadzor:"
-echo " - RL-Swarm: $SWARM_CONTAINER (prati log)"
-echo " - Ollama:   $OLLAMA_CONTAINER (bez log praćenja)"
-echo " - Clash Verge: restart u slučaju restartovanja Swarma ili mrežnih grešaka"
+echo "[$(date)] Pokrećem nadzor RL-Swarm + Ollama + Clash Verge"
 echo "======================================================"
 
 while true; do
-    current_time=$(date +%s)
     restart_needed=0
     clash_restart_required=0
+    current_time=$(date +%s)
 
     # ------------------------------------------------------
-    # 1) Provera RL-Swarm kontejnera + njegov log
+    # 1) Provera RL-Swarm kontejnera
     # ------------------------------------------------------
-    if ! docker ps --filter "name=^/${SWARM_CONTAINER}$" --format '{{.Names}}' | grep -q "$SWARM_CONTAINER"; then
-        echo "[$(date +'%Y-%m-%d %H:%M:%S')] RL-Swarm kontejner je zaustavljen!"
+    if ! docker ps --format '{{.Names}}' | grep -q "^${SWARM_CONTAINER}$"; then
+        echo "[$(date)] RL-Swarm kontejner ne radi!"
         restart_needed=1
-
+        clash_restart_required=1
     else
+        echo "[$(date)] RL-Swarm kontejner radi."
+
+        # --------------------------------------------------
+        # Ako log postoji → proveri vreme + fatalne greške
+        # --------------------------------------------------
         if [ -f "$LOG_FILE" ]; then
-            # Log postoji → počinjemo normalne provere
-            LOG_MISSING_COUNT=0
-
             log_mtime=$($STAT_CMD "$LOG_FILE")
-            time_diff=$((current_time - log_mtime))
+            diff=$((current_time - log_mtime))
 
-            echo "[$(date +'%Y-%m-%d %H:%M:%S')] RL-Swarm radi – log update pre $time_diff sekundi"
+            echo "[$(date)] RL-Swarm log age: $diff sekundi"
 
-            # Log prestao da se ažurira
-            if [ "$time_diff" -gt "$STALE_LOG_THRESHOLD" ]; then
-                echo "[$(date +'%Y-%m-%d %H:%M:%S')] Upozorenje: RL-Swarm log nije ažuriran!"
-                restart_needed=1
-            fi
-
-            # ------------------------------------------------------
-            # Detekcija ConnectionRefusedError
-            # ------------------------------------------------------
-            if tail -n 60 "$LOG_FILE" | grep -q -E "ConnectionRefusedError|\[Errno 111\] Connection refused"; then
-                echo "[$(date +'%Y-%m-%d %H:%M:%S')] Detektovan ConnectionRefusedError!"
+            if [ $diff -gt $STALE_LOG_THRESHOLD ]; then
+                echo "[$(date)] Log nije ažuriran više od $STALE_LOG_THRESHOLD sek! Restart!"
                 restart_needed=1
                 clash_restart_required=1
             fi
 
-            # ------------------------------------------------------
-            # Detekcija kritičnih mrežnih grešaka + trainer crash
-            # ------------------------------------------------------
+            # Fatalne greške → instant restart
             if tail -n 100 "$LOG_FILE" | grep -q -E \
-                "\[Errno 101\] Network is unreachable|Failed to establish a new connection|Shutting down trainer|No such process|\[Errno -2\] Name or service not known"; then
-
-                echo "[$(date +'%Y-%m-%d %H:%M:%S')] Detektovana kritična mrežna greška/trainer pad!"
+                "ConnectionRefusedError|\[Errno 111\]|Failed to establish a new connection|\[Errno 101\]|Shutting down trainer|No such process|\[Errno -2\]"; then
+                
+                echo "[$(date)] FATAL ERROR detektovan u RL-Swarm logu!"
                 restart_needed=1
                 clash_restart_required=1
             fi
 
         else
-            # Log još nije izašao i container radi
-            LOG_MISSING_COUNT=$((LOG_MISSING_COUNT + 1))
-            echo "[$(date +'%Y-%m-%d %H:%M:%S')] RL-Swarm radi, ali log još nije kreiran (brojač: $LOG_MISSING_COUNT/$LOG_MISSING_MAX)"
-
-            if [ "$LOG_MISSING_COUNT" -ge "$LOG_MISSING_MAX" ]; then
-                echo "[$(date +'%Y-%m-%d %H:%M:%S')] Log se NIJE pojavio ni posle dugog čekanja – restartujem RL-Swarm + Clash Verge!"
-                restart_needed=1
-                clash_restart_required=1
-            fi
+            # Log file ne postoji, ali RL-Swarm radi → NE restartuj
+            echo "[$(date)] RL-Swarm radi ali log još nije nastao – čekam sledeći ciklus."
         fi
     fi
 
     # ------------------------------------------------------
     # 2) Provera Ollama kontejnera
     # ------------------------------------------------------
-    if ! docker ps --filter "name=^/${OLLAMA_CONTAINER}$" --format '{{.Names}}' | grep -q "$OLLAMA_CONTAINER"; then
-        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Ollama je zaustavljena!"
+    if ! docker ps --format '{{.Names}}' | grep -q "^${OLLAMA_CONTAINER}$"; then
+        echo "[$(date)] Ollama kontejner ne radi!"
         restart_needed=1
     else
-        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Ollama radi normalno."
+        echo "[$(date)] Ollama radi."
     fi
 
     # ------------------------------------------------------
-    # 3) Ako RL-Swarm ide u restart → obavezno restart Clash Verge
+    # 3) Restart procedura
     # ------------------------------------------------------
     if [ "$restart_needed" -eq 1 ]; then
-        clash_restart_required=1
-    fi
-
-    # ------------------------------------------------------
-    # 4) Restart procedura
-    # ------------------------------------------------------
-    if [ "$restart_needed" -eq 1 ]; then
-
         echo "======================================================"
-        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Restartujem SVE kontejere!"
+        echo "[$(date)] Restartujem sve (RL-Swarm + Ollama + Clash Verge)"
         echo "======================================================"
 
-        # --- Restart Clash Verge ---
+        # Restart Clash Verge
         if [ "$clash_restart_required" -eq 1 ]; then
-            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Restartujem Clash Verge…"
-
+            echo "[$(date)] Restartujem Clash Verge..."
             pkill -f "Clash Verge"
             sleep 2
             open -a "Clash Verge"
-
-            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Clash Verge restartovan."
+            echo "[$(date)] Clash Verge restartovan."
         fi
 
-        # --- Restart RL-Swarm / Ollama ---
         docker stop "$SWARM_CONTAINER" &>/dev/null
         docker stop "$OLLAMA_CONTAINER" &>/dev/null
-
         docker start "$OLLAMA_CONTAINER"
         docker start "$SWARM_CONTAINER"
     fi
 
-    sleep "$CHECK_INTERVAL"
+    sleep $CHECK_INTERVAL
 done
